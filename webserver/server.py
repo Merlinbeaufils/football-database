@@ -25,11 +25,14 @@ app = Flask(__name__, template_folder=tmpl_dir)
 #
 #     postgresql://USER:PASSWORD@34.75.94.195/proj1part2
 #
+#     my version:
+#     postgresql://mb4988:mbjb@34.75.94.195/proj1part2
+#
 # For example, if you had username gravano and password foobar, then the following line would be:
 #
 #     DATABASEURI = "postgresql://gravano:foobar@34.75.94.195/proj1part2"
 #
-DATABASEURI = "postgresql://user:password@34.75.94.195/proj1part2"
+DATABASEURI = "postgresql://mb4988:mbjb@34.75.94.195/proj1part2"
 
 
 #
@@ -173,8 +176,9 @@ def add():
 
 @app.route('/login')
 def login():
-    abort(401)
-    this_is_never_executed()
+    os.abort(401)
+    raise AssertionError
+    # this_is_never_executed()
 
 
 if __name__ == "__main__":
@@ -184,7 +188,7 @@ if __name__ == "__main__":
   @click.option('--debug', is_flag=True)
   @click.option('--threaded', is_flag=True)
   @click.argument('HOST', default='0.0.0.0')
-  @click.argument('PORT', default=8111, type=int)
+  @click.argument('PORT', default=5432, type=int)
   def run(debug, threaded, host, port):
     """
     This function handles command line parameters.
