@@ -93,7 +93,7 @@ def teardown_request(exception):
 # see for decorators: http://simeonfranklin.com/blog/2012/jul/1/python-decorators-in-12-steps/
 #
 @app.route('/')
-def index():
+def root():
   """
   request is a special object that Flask provides to access web request information:
 
@@ -108,16 +108,11 @@ def index():
   # DEBUG: this is debugging code to see what request looks like
   print(request.args)
 
-
-  #
-  # example of a database query
-  #
-  cursor = g.conn.execute("SELECT name FROM test")
-  names = []
-  for result in cursor:
-    names.append(result['name'])  # can also be accessed using result[0]
-  cursor.close()
-
+  # cursor = g.conn.execute("SELECT name FROM test")
+  # names = []
+  # for result in cursor:
+  #   names.append(result['name'])  # can also be accessed using result[0]
+  # cursor.close()
   #
   # Flask uses Jinja templates, which is an extension to HTML where you can
   # pass data to a template and dynamically generate HTML based on the data
@@ -144,14 +139,14 @@ def index():
   #     <div>{{n}}</div>
   #     {% endfor %}
   #
-  context = dict(data = names)
+  # context = dict(data = names)
 
 
   #
   # render_template looks in the templates/ folder for files.
   # for example, the below file reads template/index.html
   #
-  return render_template("index.html", **context)
+  return render_template("root.html", **{})
 
 #
 # This is an example of a different path.  You can see it at:
@@ -161,34 +156,26 @@ def index():
 # Notice that the function name is another() rather than index()
 # The functions for each app.route need to have different names
 #
-@app.route('/another')
-def another():
-  return render_template("another.html")
+@app.route('/compare_players')
+def compare_players():
+
+  players = g.conn.execute("SELECT * FROM players P")
+  player_names = []
+  for player in players:
+    player_names.append(player['playername'])  # can also be accessed using result[0]
+  players.close()
+
+  context = dict(data=player_names)
+  return render_template("compare_players.html", **context)
 
 
 # Example of adding new data to the database
 @app.route('/add', methods=['POST'])
-def add_to_nationality():
+def add():
   name = request.form['name']
   g.conn.execute('INSERT INTO test(name) VALUES (%s)', name)
   return redirect('/')
 
-@app.route('/add', methods=['POST'])
-def add_to_nationality():
-  name = request.form['name']
-  g.conn.execute('INSERT INTO test(name) VALUES (%s)', name)
-  return redirect('/')
-
-@app.route('/add', methods=['POST'])
-def add_to_nationality():
-  name = request.form['name']
-  g.conn.execute('INSERT INTO test(name) VALUES (%s)', name)
-  return redirect('/')
-
-@app.route('/reset_filter')
-def add_to_nationality():
-  g.conn.execute('DELETE TABLE filter')
-  return redirect('/')
 
 
 @app.route('/login')
