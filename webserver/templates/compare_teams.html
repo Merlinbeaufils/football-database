@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <h1>Teams</h1>
+</head>
+<body>
+    <div>
+    {% for n in data %}
+    <div>{{n}}</div>
+    {% endfor %} </div>
+
+    <div></div>
+
+    <p> Countries represented: {% for country in countries %} {{country}}, {% endfor %} </p>
+
+
+    <div></div>
+
+    <p> Filter by:</p>
+
+    <form method="POST" action="/add_to_country">
+    <p>Countries: <input type="text" name="name"> <input type="submit" value="Add"></p>
+    </form>
+
+    <form method="POST" action="/add_to_ranking">
+    <p>Max Ranking: <input type="text" name="name"> <input type="submit" value="Add"></p>
+    </form>
+
+    <button class=btn > <p><a href="reset_filter_teams">RESET FILTER </a></p></button>
+    <button class=btn > <p><a href="detailed_view_teams">SHOW DETAILED </a></p></button>
+
+    <div> </div>
+
+    <button class=btn > <p><a href="go_to_players_from_teams">Players of these teams </a></p></button>
+    <button class=btn > <p><a href="go_to_leagues_from_teams">Leagues of these teams</a></p></button>
+
+    <div></div>
+    <button class=btn > <p><a href="/">HOME </a></p></button>
+
+
+
+
+
+</body>
+</html>

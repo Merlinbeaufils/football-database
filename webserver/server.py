@@ -166,29 +166,7 @@ def another():
   return render_template("another.html")
 
 
-# Example of adding new data to the database
-@app.route('/add', methods=['POST'])
-def add_to_nationality():
-  name = request.form['name']
-  g.conn.execute('INSERT INTO test(name) VALUES (%s)', name)
-  return redirect('/')
 
-@app.route('/add', methods=['POST'])
-def add_to_nationality():
-  name = request.form['name']
-  g.conn.execute('INSERT INTO test(name) VALUES (%s)', name)
-  return redirect('/')
-
-@app.route('/add', methods=['POST'])
-def add_to_nationality():
-  name = request.form['name']
-  g.conn.execute('INSERT INTO test(name) VALUES (%s)', name)
-  return redirect('/')
-
-@app.route('/reset_filter')
-def add_to_nationality():
-  g.conn.execute('DELETE TABLE filter')
-  return redirect('/')
 
 
 @app.route('/login')

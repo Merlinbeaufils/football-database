@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <h1 style="text-align: center;">PLayers</h1>
+    <h1>Players</h1>
 </head>
 <body>
     <div>
@@ -12,8 +12,32 @@
 
     <div></div>
 
-    <p> Filter:</p>
 
+    <p> Countries represented: {% for country in countries %}  {{country}}, {% endfor %} </p>
+
+
+    <div></div>
+
+    <p> Filter by:</p>
+
+    <form method="POST" action="/add_to_nationality">
+    <p>Nationalities: <input type="text" name="name"> <input type="submit" value="Add"></p>
+    </form>
+
+    <form method="POST" action="/add_to_goals">
+    <p>Goals: <input type="text" name="name"> <input type="submit" value="Add"></p>
+    </form>
+
+    <button class=btn > <p><a href="reset_filter_players">RESET FILTER </a></p></button>
+    <button class=btn > <p><a href="detailed_view_players">SHOW DETAILED </a></p></button>
+
+
+    <div> </div>
+    <button class=btn > <p><a href="go_to_teams_from_players">Teams of these players</a></p></button>
+    <button class=btn > <p><a href="go_to_leagues_from_players">Leagues of these players</a></p></button>
+
+    <div></div>
+    <button class=btn > <p><a href="/">HOME </a></p></button>
 
 
 
