@@ -5,14 +5,21 @@
     <h1>Teams</h1>
 </head>
 <body>
-    <div>
-    {% for n in data %}
-    <div>{{n}}</div>
-    {% endfor %} </div>
+    {% if extended %}
+        <div>
+        {% for n in data %}
+        <div>{{n['team_name']}}: | country: {{n['country']}} | manager:{{n['manager']}} | goals:{{n['goals']}} | league standing:{{n['league_standing']}}</div>
+        {% endfor %} </div>
+    {% else %}
+        <div>
+        {% for n in data %}
+        <div>{{n['team_name']}}</div>
+        {% endfor %} </div>
+    {% endif %}
 
     <div></div>
 
-    <p> Countries represented: {% for country in countries %} {{country}}, {% endfor %} </p>
+    <p> Countries represented: {% for n in data %} {{n['country']}}, {% endfor %} </p>
 
 
     <div></div>

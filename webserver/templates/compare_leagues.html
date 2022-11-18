@@ -5,11 +5,17 @@
     <h1>Leagues</h1>
 </head>
 <body>
-    <div>
-    {% for n in data %}
-    <div>{{n}}</div>
-    {% endfor %} </div>
-
+    {% if extended %}
+        <div>
+        {% for n in data %}
+        <div>{{n['league_name']}}: | first:{{n['firstplaceteam']}} | last:{{n['lastplaceteam']}}</div>
+        {% endfor %} </div>
+    {% else %}
+        <div>
+        {% for n in data %}
+        <div>{{n['league_name']}}</div>
+        {% endfor %} </div>
+    {% endif %}
 
 
     <div></div>

@@ -48,7 +48,8 @@ engine.execute("""CREATE TABLE IF NOT EXISTS filter (
   country varchar(30),
   player_filter int,
   team_filter int,
-  league_filter int
+  league_filter int,
+  extended int
 );""")
 engine.execute('DELETE FROM filter;')
 engine.execute('INSERT INTO filter(goals, ranking) VALUES (0, 20);')
@@ -177,35 +178,43 @@ def root():
 def compare_players():
     team_filter = next(g.conn.execute("SELECT MAX(f.team_filter) AS max FROM filter f;"))['max']
     league_filter = next(g.conn.execute("SELECT MAX(f.league_filter) AS max FROM filter f;"))['max']
+    extended = next(g.conn.execute("SELECT MAX(f.extended) AS max FROM filter f;"))['max']
     g.conn.execute("DELETE FROM filter_players;")
 
     filter_nationalities = g.conn.execute(
         "SELECT DISTINCT f.nationality FROM filter f WHERE f.nationality IS NOT NULL;")
 
     if team_filter:
-        players = g.conn.execute("""SELECT DISTINCT i.playername, p.nationality FROM players p, Is_Part_Of i, filter_teams f 
+        players = g.conn.execute("""SELECT DISTINCT p.playername, p.nationality, p.age, p.position, p.goals FROM players p, Is_Part_Of i, filter_teams f 
                             WHERE i.team_name = f.team_name AND p.playername = i.playername;""")
     elif league_filter:
-        players = g.conn.execute("""SELECT DISTINCT i.playername, p.nationality FROM players p, Is_Part_Of i, registered_in r, filter_leagues f
+        players = g.conn.execute("""SELECT DISTINCT p.playername, p.nationality, p.age, p.position, p.goals FROM players p, Is_Part_Of i, registered_in r, filter_leagues f
                             WHERE i.team_name = r.team_name AND r.league_name = f.league_name AND p.playername = i.playername;""")
 
     elif not [player for player in filter_nationalities]:
         players = g.conn.execute(
-            "SELECT DISTINCT P.playername, P.nationality FROM players P WHERE P.goals >= (SELECT MAX(f.goals) FROM filter f)")
+            "SELECT DISTINCT p.playername, p.nationality, p.age, p.position, p.goals FROM players P WHERE P.goals >= (SELECT MAX(f.goals) FROM filter f)")
     else:
         players = g.conn.execute(
-            "SELECT DISTINCT P.playername, P.nationality FROM players P, filter f WHERE P.nationality = f.nationality AND P.goals >= (SELECT MAX(f.goals) FROM filter f);")
+            "SELECT DISTINCT p.playername, p.nationality, p.age, p.position, p.goals FROM players P, filter f WHERE P.nationality = f.nationality AND P.goals >= (SELECT MAX(f.goals) FROM filter f);")
 
     p = [player for player in players]
     players.close()
     player_names = list(set(player['playername'] for player in p))
     nationalities_list = list(set(nationality['nationality'] for nationality in p))
 
+
     [g.conn.execute("INSERT INTO filter_players(playername) values (%s);", name) for name in player_names]
     g.conn.execute("DELETE FROM filter_teams;")
     g.conn.execute("DELETE FROM filter_leagues;")
 
-    context = dict(data=player_names, countries=nationalities_list)
+    if extended:
+        new = [dict(playername=pl['playername'], nationality=pl['nationality'],
+                           age=pl['age'], position=pl['position'], goals=pl['goals']) for pl in p]
+    else:
+        new = [dict(playername=pl['playername'], nationality=pl['nationality']) for pl in p]
+
+    context = dict(data=new, extended=bool(extended))
     return render_template("compare_players.html", **context)
 
 
@@ -214,22 +223,24 @@ def compare_teams():
     league_filter = next(g.conn.execute("SELECT MAX(f.league_filter) AS max FROM filter f;"))['max']
     player_filter = next(g.conn.execute("SELECT MAX(f.player_filter) AS max FROM filter f;"))['max']
     g.conn.execute("DELETE FROM filter_teams;")
+    extended = next(g.conn.execute("SELECT MAX(f.extended) AS max FROM filter f;"))['max']
+
 
     filter_league_names = g.conn.execute("SELECT DISTINCT f.country FROM filter f WHERE f.country IS NOT NULL;")
 
     if league_filter:
-        teams = g.conn.execute("""SELECT DISTINCT t.team_name, t.governing_country FROM teams t, registered_in i, filter_leagues f 
+        teams = g.conn.execute("""SELECT DISTINCT t.team_name, t.governing_country, t.manager, t.league_standing, t.goals_for FROM teams t, registered_in i, filter_leagues f 
                             WHERE i.league_name = f.league_name AND t.team_name = i.team_name;""")
     elif player_filter:
-        teams = g.conn.execute("""SELECT DISTINCT i.team_name, t.governing_country FROM Is_Part_Of i, filter_players f, teams t
+        teams = g.conn.execute("""SELECT DISTINCT t.team_name, t.governing_country, t.manager, t.league_standing, t.goals_for FROM Is_Part_Of i, filter_players f, teams t
                             WHERE i.playername = f.playername AND t.team_name = i.team_name;""")
 
     elif not [team for team in filter_league_names]:
         teams = g.conn.execute(
-            "SELECT DISTINCT t.team_name, t.governing_country FROM teams t WHERE t.league_standing <= (SELECT MAX(f.ranking) FROM filter f)")
+            "SELECT DISTINCT t.team_name, t.governing_country, t.manager, t.league_standing, t.goals_for FROM teams t WHERE t.league_standing <= (SELECT MAX(f.ranking) FROM filter f)")
     else:
         teams = g.conn.execute(
-            "SELECT DISTINCT t.team_name, t.governing_country FROM teams t, filter f WHERE t.league_name = f.country AND t.league_standing <= (SELECT MIN(g.ranking) FROM filter g;")
+            "SELECT DISTINCT t.team_name, t.governing_country, t.manager, t.league_standing, t.goals_for FROM teams t, filter f WHERE t.league_name = f.country AND t.league_standing <= (SELECT MIN(g.ranking) FROM filter g;")
 
     t = [team for team in teams]
     nationalities_list = list(set(team['governing_country'] for team in t))
@@ -240,7 +251,13 @@ def compare_teams():
     g.conn.execute("DELETE FROM filter_players;")
     g.conn.execute("DELETE FROM filter_leagues;")
 
-    context = dict(data=team_names, countries=nationalities_list)
+    if extended:
+        new = [dict(team_name=pl['team_name'], country=pl['governing_country'],
+                    manager=pl['manager'], league_standing=pl['league_standing'], goals=pl['goals_for']) for pl in t]
+    else:
+        new = [dict(team_name=pl['team_name'], country=pl['governing_country']) for pl in t]
+
+    context = dict(data=new, extended=bool(extended))
     return render_template("compare_teams.html", **context)
 
 
@@ -249,15 +266,17 @@ def compare_leagues():
     team_filter = next(g.conn.execute("SELECT MAX(f.team_filter) AS max FROM filter f;"))['max']
     player_filter = next(g.conn.execute("SELECT MAX(f.player_filter) AS max FROM filter f;"))['max']
     g.conn.execute("DELETE FROM filter_leagues;")
+    extended = next(g.conn.execute("SELECT MAX(f.extended) AS max FROM filter f;"))['max']
+
 
     if player_filter:
-        leagues = g.conn.execute("""SELECT DISTINCT r.league_name FROM Is_Part_Of i, registered_in r, filter_players f
-                            WHERE r.team_name = i.team_name AND i.playername = f.playername;""")
+        leagues = g.conn.execute("""SELECT DISTINCT l.league_name, l.lastplaceteam, l.firstplaceteam FROM leagues l, Is_Part_Of i, registered_in r, filter_players f
+                            WHERE r.team_name = i.team_name AND i.playername = f.playername AND l.league_name = r.league_name;""")
     elif team_filter:
-        leagues = g.conn.execute("""SELECT DISTINCT r.league_name FROM registered_in r, filter_teams f
-                            WHERE r.team_name = f.team_name;""")
+        leagues = g.conn.execute("""SELECT DISTINCT l.league_name, l.lastplaceteam, l.firstplaceteam FROM registered_in r, filter_teams f, leagues l
+                            WHERE r.team_name = f.team_name AND l.league_name = r.league_name;""")
     else:
-        leagues = g.conn.execute("SELECT DISTINCT l.league_name FROM leagues l")
+        leagues = g.conn.execute("SELECT DISTINCT l.league_name, l.lastplaceteam, l.firstplaceteam FROM leagues l")
 
     l = [league for league in leagues]
     league_names = [league['league_name'] for league in l]
@@ -267,7 +286,12 @@ def compare_leagues():
     g.conn.execute("DELETE FROM filter_players;")
     g.conn.execute("DELETE FROM filter_teams;")
 
-    context = dict(data=league_names)
+    if extended:
+        new = [dict(league_name=pl['league_name'], firstplaceteam=pl['firstplaceteam'], lastplaceteam=pl['lastplaceteam']) for pl in l]
+    else:
+        new = [dict(league_name=pl['league_name']) for pl in l]
+
+    context = dict(data=new, extended=bool(extended))
     return render_template("compare_leagues.html", **context)
 
 
@@ -361,6 +385,22 @@ def go_to_teams_from_leagues():
     g.conn.execute('DELETE FROM filter;')
     g.conn.execute('INSERT INTO filter(goals, ranking, league_filter) VALUES (0, 20, 1);')
     return redirect('/compare_teams')
+
+@app.route('/detailed_view_players')
+def detailed_view_players():
+    g.conn.execute('INSERT INTO filter(extended) VALUES (1);')
+    return redirect('/compare_players')
+
+@app.route('/detailed_view_teams')
+def detailed_view_teams():
+    g.conn.execute('INSERT INTO filter(extended) VALUES (1);')
+    return redirect('/compare_teams')
+
+@app.route('/detailed_view_leagues')
+def detailed_view_leagues():
+    g.conn.execute('INSERT INTO filter(extended) VALUES (1);')
+    return redirect('/compare_leagues')
+
 
 
 # Example of adding new data to the database

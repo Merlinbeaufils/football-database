@@ -6,14 +6,23 @@
 </head>
 <body>
     <div>
-    {% for n in data %}
-    <div>{{n}}</div>
-    {% endfor %} </div>
+    {% if extended %}
+        <div>
+        {% for n in data %}
+        <div>{{n['playername']}}: | Age:{{n['age']}} | position:{{n['position']}} | goals:{{n['goals']}}</div>
+        {% endfor %} </div>
+    {% else %}
+        <div>
+        {% for n in data %}
+        <div>{{n['playername']}}</div>
+        {% endfor %} </div>
+    {% endif %}
+    </div>
 
     <div></div>
 
 
-    <p> Countries represented: {% for country in countries %}  {{country}}, {% endfor %} </p>
+    <p> Countries represented: {% for n in data %}  {{n['nationality']}}, {% endfor %} </p>
 
 
     <div></div>
